@@ -1,0 +1,24 @@
+{
+    "private": true,
+    "name": "@humanai-repo/dataset-list",
+    "version": "0.0.1",
+    "main": "./src/main.ts",
+    "license": "Apache 2.0",
+    "author": "human.ai <hello@human.ai>",
+    "type": "module",
+    "engines": {
+        "node": ">=14.8"
+    },
+    "scripts": {
+        "prestart": "tsc -b",
+        "start": "node bin/main.js"
+    },
+    "dependencies": {
+        "@oasislabs/parcel": "^1.0.0-beta.1",
+        "ts-command-line-args": "^1.8.1",
+        "tslib": "^2.2.0"
+    },
+    "devDependencies": {
+        "typescript": "4.1.5"
+    }
+}
