@@ -1,3 +1,4 @@
+#!/bin/bash
 # Usage: upload-inputs {abs path to upload-shakespeare-summary-dir} {abs path to working-dir}
 
 WORKING_DIR=`pwd`
