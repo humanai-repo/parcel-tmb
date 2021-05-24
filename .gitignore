@@ -77,3 +77,6 @@ working-data/
 
 # FuseBox cache
 .fusebox/
+
+# Ignore generated JS libraries
+bin/

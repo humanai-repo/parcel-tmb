@@ -33,7 +33,7 @@ To create a working-data directory and download the data run:
 ### Upload the test data to Parcel
 
 Follow the instructions
-(here)[https://github.com/humanai-repo/parcel-demo/tree/main/upload-shakespeare-summary]
+[here](https://github.com/humanai-repo/parcel-demo/tree/main/upload-shakespeare-summary)
 to build the upload package and set the PARCEL_CLIENT_ID and OASIS_API_PRIVATE_KEY
 environment variables.
 

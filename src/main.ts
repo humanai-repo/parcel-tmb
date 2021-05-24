@@ -39,6 +39,7 @@ async function submitJobSpecs(jobSpecs: JobSpec[], parcel: Parcel) {
     let jobIds : JobId [] = [];
     for(let jobSpec of jobSpecs) {
         console.log(jobSpec.cmd.join(" "));
+        console.log(jobSpec); //OTT Printf debugging -- replace with logging inputs and outputs
         let jobId = (await parcel.submitJob(jobSpec)).id;
         console.log(`Job ${jobId} submitted.`);
         jobIds.push(jobId);
@@ -106,8 +107,6 @@ async function tmb(inputAddresses: {[key:string] : string}, identity: IdentityId
         'calcTMB.sh',
     ];
 
-    console.log(cmd.join(" "));
-
     const jobSpec: JobSpec = {
         name: 'calc-tmb',
         image: 'humansimon/ectmb',
@@ -132,12 +131,12 @@ async function main() {
     fs.readFileSync(args.inputAddresses || '', 'ascii').
         split("\n").filter((l:string) => l !== '').
         map((l:string) => l.split(",")).
-        forEach((l : string[]) => inputAddresses[l[0]] = l[1]);
+        forEach((l : string[]) => inputAddresses[l[1]] = l[0]);
 
     const outputAddresses = await tmb(inputAddresses, identity, parcel);
     // Write the out addresses to the output file if set
     if (args.outputAddresses) {
-        fs.writeFileSync(args.outputAddresses, outputAddresses.join("\n"));
+        fs.writeFileSync(args.outputAddresses || '', outputAddresses.join("\n"));
     }
 }
 
