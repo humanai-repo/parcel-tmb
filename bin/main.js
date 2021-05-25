@@ -1,11 +1,14 @@
+/**
+ * @fileoverview Script to run tumour burden calculation on Parcel.
+ */
 var _a, _b;
 import Parcel, { JobPhase } from '@oasislabs/parcel';
 import { parse } from 'ts-command-line-args';
 import * as fs from 'fs';
 import * as process from 'process';
+// Oasis Parcel API values.
 const clientId = (_a = process.env.PARCEL_CLIENT_ID) !== null && _a !== void 0 ? _a : '';
-const privateKey = JSON.parse((_b = process.env.OASIS_API_PRIVATE_KEY) !== null && _b !== void 0 ? _b : '');
-const maxInputFilesPerJob = 10;
+const privateKey = JSON.parse((_b = process.env.OASIS_API_PRIVATE_KEY) !== null && _b !== void 0 ? _b : '{}');
 export const args = parse({
     inputAddresses: {
         type: String, alias: 'a', optional: true,
@@ -17,55 +20,56 @@ export const args = parse({
     },
     help: {
         type: Boolean, optional: true, alias: 'h',
-        description: 'Prints this usage guide'
+        description: 'Prints this usage guide.'
     },
 }, {
     helpArg: 'help',
 });
+// Submits the jobs to Parcel and waits for the jobs to complete.
 async function submitJobSpecs(jobSpecs, parcel) {
-    // Submit the Jobs
+    // Submit the jobs.
     let jobIds = [];
     for (let jobSpec of jobSpecs) {
         console.log(jobSpec.cmd.join(" "));
-        console.log(await parcel.submitJob(jobSpec));
         let jobId = (await parcel.submitJob(jobSpec)).id;
         console.log(`Job ${jobId} submitted.`);
         jobIds.push(jobId);
         // Add a 5 second wait between submitting jobs to (hopefully) reduce timeouts.
         await new Promise((resolve) => setTimeout(resolve, 5000)); // eslint-disable-line no-promise-executor-return
     }
-    // Wait for them to complete
+    // Wait for the jobs to complete.
     let jobRunningOrPending;
     let jobs;
     do {
         jobRunningOrPending = false;
         await new Promise((resolve) => setTimeout(resolve, 5000)); // eslint-disable-line no-promise-executor-return
         jobs = [];
-        console.log('Getting job statuses');
+        console.log('Getting job statuses.');
         for (let jobId of jobIds) {
-            let job = await parcel.getJob(jobId);
+            const job = await parcel.getJob(jobId);
             if (job.status === null || job.status === undefined) {
-                console.log(`Error reading ${jobId}`);
+                console.log(`Error reading ${jobId}.`);
                 jobRunningOrPending = true;
             }
             else {
-                console.log(`Job ${jobId} status is ${JSON.stringify(job.status.phase)}`);
+                console.log(`Job ${jobId} status is ${JSON.stringify(job.status.phase)}.`);
                 jobs.push(job);
             }
         }
         for (let job of jobs) {
-            if (job.status !== undefined) {
-                let jobId = job.id;
-                jobRunningOrPending = jobRunningOrPending || job.status.phase === JobPhase.PENDING ||
-                    job.status.phase === JobPhase.RUNNING;
-                if (job.status.phase === JobPhase.FAILED) {
-                    console.log(`Job ${jobId} failed with msg ${job.status.message}`);
-                    throw Error(`Job ${jobId} failed with msg ${job.status.message}`);
-                }
+            if (job.status === undefined) {
+                continue;
+            }
+            const jobId = job.id;
+            jobRunningOrPending = jobRunningOrPending || job.status.phase === JobPhase.PENDING ||
+                job.status.phase === JobPhase.RUNNING;
+            if (job.status.phase === JobPhase.FAILED) {
+                console.log(`Job ${jobId} failed with msg ${job.status.message}.`);
+                throw Error(`Job ${jobId} failed with msg ${job.status.message}.`);
             }
         }
     } while (jobRunningOrPending);
-    // When all jobs have completed collect the output addresses
+    // When all jobs have completed collect the output addresses.
     let outputAddresses = [];
     for (let job of jobs) {
         if (job.status !== undefined) {
@@ -76,15 +80,14 @@ async function submitJobSpecs(jobSpecs, parcel) {
     }
     return outputAddresses;
 }
+// Runs the tmb job on Parcel.
 async function tmb(inputAddresses, identity, parcel) {
-    let inputFileNames = ["UCEC.rda", "exome_hg38_vep.Rdata", "gene.covar.txt", "mutation_context_96.txt", "TST170_DNA_targets_hg38.bed", "GRCh38.d1.vd1.fa"];
-    let outputFileName = "tmb.pdf";
-    let inputDocuments = [];
-    let inputCmd = [];
-    for (let i of inputFileNames) {
-        inputDocuments.push({ mountPath: i, id: inputAddresses[i] });
-    }
-    let cmd = [
+    const inputFileNames = ["UCEC.rda", "exome_hg38_vep.Rdata", "gene.covar.txt", "mutation_context_96.txt", "TST170_DNA_targets_hg38.bed", "GRCh38.d1.vd1.fa"];
+    const outputFileName = "tmb.pdf";
+    const inputDocuments = inputFileNames.map((inputFileName) => {
+        return { mountPath: inputFileName, id: inputAddresses[inputFileName] };
+    });
+    const cmd = [
         'calcTMB.sh',
     ];
     console.log(cmd.join(" "));
@@ -110,7 +113,7 @@ async function main() {
         map((l) => l.split(",")).
         forEach((l) => inputAddresses[l[0]] = l[1]);
     const outputAddresses = await tmb(inputAddresses, identity, parcel);
-    // Write the out addresses to the output file if set
+    // Write the out addresses to the output file if set.
     if (args.outputAddresses) {
         fs.writeFileSync(args.outputAddresses, outputAddresses.join("\n"));
     }
@@ -121,4 +124,3 @@ main()
     console.log(`Error in main(): ${err.stack || JSON.stringify(err)}`);
     return process.exit(1);
 });
-;

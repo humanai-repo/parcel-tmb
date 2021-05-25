@@ -7,10 +7,9 @@ import { parse } from 'ts-command-line-args';
 import * as fs from 'fs';
 import * as process from 'process';
 
+// Oasis Parcel API values.
 const clientId = process.env.PARCEL_CLIENT_ID ?? '';
-const privateKey = JSON.parse(process.env.OASIS_API_PRIVATE_KEY ?? '');
-
-const maxInputFilesPerJob = 10;
+const privateKey = JSON.parse(process.env.OASIS_API_PRIVATE_KEY ?? '{}');
 
 interface IOArguments {
     inputAddresses?: string;
@@ -38,8 +37,9 @@ export const args = parse<IOArguments>(
     },
 );
 
+// Submits the jobs to Parcel and waits for the jobs to complete.
 async function submitJobSpecs(jobSpecs: JobSpec[], parcel: Parcel): Promise<DocumentId[]> {
-    // Submit the Jobs
+    // Submit the jobs.
     let jobIds: JobId[] = [];
     for (let jobSpec of jobSpecs) {
         console.log(jobSpec.cmd.join(" "));
@@ -50,34 +50,34 @@ async function submitJobSpecs(jobSpecs: JobSpec[], parcel: Parcel): Promise<Docu
         await new Promise((resolve) => setTimeout(resolve, 5000)); // eslint-disable-line no-promise-executor-return
     }
 
-    // Wait for them to complete
+    // Wait for the jobs to complete.
     let jobRunningOrPending: boolean;
     let jobs: Job[];
     do {
         jobRunningOrPending = false;
         await new Promise((resolve) => setTimeout(resolve, 5000)); // eslint-disable-line no-promise-executor-return
         jobs = [];
-        console.log('Getting job statuses');
+        console.log('Getting job statuses.');
         for (let jobId of jobIds) {
-            let job = await parcel.getJob(jobId);
+            const job = await parcel.getJob(jobId);
             if (job.status === null || job.status === undefined) {
-                console.log(`Error reading ${jobId}`);
+                console.log(`Error reading ${jobId}.`);
                 jobRunningOrPending = true;
-            }
-            else {
-                console.log(`Job ${jobId} status is ${JSON.stringify(job.status.phase)}`);
+            } else {
+                console.log(`Job ${jobId} status is ${JSON.stringify(job.status.phase)}.`);
                 jobs.push(job);
             }
         }
         for (let job of jobs) {
-            if (job.status !== undefined) {
-                let jobId = job.id;
-                jobRunningOrPending = jobRunningOrPending || job.status.phase === JobPhase.PENDING ||
-                    job.status.phase === JobPhase.RUNNING;
-                if (job.status.phase === JobPhase.FAILED) {
-                    console.log(`Job ${jobId} failed with msg ${job.status.message}`);
-                    throw Error(`Job ${jobId} failed with msg ${job.status.message}`);
-                }
+            if (job.status === undefined) {
+                continue;
+            }
+            const jobId = job.id;
+            jobRunningOrPending = jobRunningOrPending || job.status.phase === JobPhase.PENDING ||
+                job.status.phase === JobPhase.RUNNING;
+            if (job.status.phase === JobPhase.FAILED) {
+                console.log(`Job ${jobId} failed with msg ${job.status.message}.`);
+                throw Error(`Job ${jobId} failed with msg ${job.status.message}.`);
             }
         }
     } while (jobRunningOrPending);
@@ -94,19 +94,17 @@ async function submitJobSpecs(jobSpecs: JobSpec[], parcel: Parcel): Promise<Docu
     return outputAddresses;
 }
 
+// Runs the tmb job on Parcel.
 async function tmb(inputAddresses: { [key: string]: string }, identity: IdentityId,
     parcel: Parcel): Promise<DocumentId[]> {
-    let inputFileNames = ["UCEC.rda", "exome_hg38_vep.Rdata", "gene.covar.txt", "mutation_context_96.txt", "TST170_DNA_targets_hg38.bed", "GRCh38.d1.vd1.fa"];
-    let outputFileName = "tmb.pdf";
+    const inputFileNames = ["UCEC.rda", "exome_hg38_vep.Rdata", "gene.covar.txt", "mutation_context_96.txt", "TST170_DNA_targets_hg38.bed", "GRCh38.d1.vd1.fa"];
+    const outputFileName = "tmb.pdf";
 
-    let inputDocuments: InputDocumentSpec[] = [];
-    let inputCmd: string[] = [];
-    for (let i of inputFileNames) {
-        inputDocuments.push(
-            { mountPath: i, id: inputAddresses[i] as DocumentId });
-    }
+    const inputDocuments: InputDocumentSpec[] = inputFileNames.map((inputFileName: string) => {
+        return { mountPath: inputFileName, id: inputAddresses[inputFileName] as DocumentId };
+    });
 
-    let cmd = [
+    const cmd = [
         'calcTMB.sh',
     ];
 
@@ -139,6 +137,7 @@ async function main() {
         forEach((l: string[]) => inputAddresses[l[0]] = l[1]);
 
     const outputAddresses = await tmb(inputAddresses, identity, parcel);
+
     // Write the out addresses to the output file if set.
     if (args.outputAddresses) {
         fs.writeFileSync(args.outputAddresses, outputAddresses.join("\n"));
