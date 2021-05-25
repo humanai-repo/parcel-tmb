@@ -1,3 +1,7 @@
+/**
+ * @fileoverview Script to run tumour burden calculation on Parcel.
+ */
+
 import Parcel, { InputDocumentSpec, OutputDocumentSpec, Job, JobId, JobSpec, JobPhase, DocumentId, IdentityId } from '@oasislabs/parcel';
 import { parse } from 'ts-command-line-args';
 import * as fs from 'fs';
@@ -26,7 +30,7 @@ export const args = parse<IOArguments>(
         },
         help: {
             type: Boolean, optional: true, alias: 'h',
-            description: 'Prints this usage guide'
+            description: 'Prints this usage guide.'
         },
     },
     {
@@ -34,7 +38,7 @@ export const args = parse<IOArguments>(
     },
 );
 
-async function submitJobSpecs(jobSpecs: JobSpec[], parcel: Parcel) {
+async function submitJobSpecs(jobSpecs: JobSpec[], parcel: Parcel): Promise<DocumentId[]> {
     // Submit the Jobs
     let jobIds: JobId[] = [];
     for (let jobSpec of jobSpecs) {
@@ -78,7 +82,7 @@ async function submitJobSpecs(jobSpecs: JobSpec[], parcel: Parcel) {
         }
     } while (jobRunningOrPending);
 
-    // When all jobs have completed collect the output addresses
+    // When all jobs have completed collect the output addresses.
     let outputAddresses: DocumentId[] = [];
     for (let job of jobs) {
         if (job.status !== undefined) {
@@ -91,7 +95,7 @@ async function submitJobSpecs(jobSpecs: JobSpec[], parcel: Parcel) {
 }
 
 async function tmb(inputAddresses: { [key: string]: string }, identity: IdentityId,
-    parcel: Parcel) {
+    parcel: Parcel): Promise<DocumentId[]> {
     let inputFileNames = ["UCEC.rda", "exome_hg38_vep.Rdata", "gene.covar.txt", "mutation_context_96.txt", "TST170_DNA_targets_hg38.bed", "GRCh38.d1.vd1.fa"];
     let outputFileName = "tmb.pdf";
 
@@ -135,7 +139,7 @@ async function main() {
         forEach((l: string[]) => inputAddresses[l[0]] = l[1]);
 
     const outputAddresses = await tmb(inputAddresses, identity, parcel);
-    // Write the out addresses to the output file if set
+    // Write the out addresses to the output file if set.
     if (args.outputAddresses) {
         fs.writeFileSync(args.outputAddresses, outputAddresses.join("\n"));
     }
@@ -146,4 +150,4 @@ main()
     .catch((err) => {
         console.log(`Error in main(): ${err.stack || JSON.stringify(err)}`);
         return process.exit(1);
-    });;
+    });
