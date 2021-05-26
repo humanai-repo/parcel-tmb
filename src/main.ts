@@ -98,7 +98,9 @@ async function submitJobSpecs(jobSpecs: JobSpec[], parcel: Parcel): Promise<Docu
 // Runs the tmb job on Parcel.
 async function tmb(inputAddresses: { [key: string]: string }, identity: IdentityId,
     parcel: Parcel): Promise<DocumentId[]> {
-    const inputFileNames = ["UCEC.rda", "exome_hg38_vep.Rdata", "gene.covar.txt", "mutation_context_96.txt", "TST170_DNA_targets_hg38.bed", "GRCh38.d1.vd1.fa"];
+    // const inputFileNames = ["UCEC.rda", "exome_hg38_vep.Rdata", "gene.covar.txt", "mutation_context_96.txt", "TST170_DNA_targets_hg38.bed", "GRCh38.d1.vd1.fa"];
+    // Remove files greater in size than 10MB for an experiment
+    const inputFileNames = ["gene.covar.txt", "mutation_context_96.txt", "TST170_DNA_targets_hg38.bed"];
     const outputFileName = "tmb.pdf";
 
     const inputDocuments: InputDocumentSpec[] = inputFileNames.map((inputFileName: string) => {
