@@ -80,3 +80,6 @@ working-data/
 
 # Ignore generated JS libraries
 bin/
+
+# Ignore Mac OS generated files
+.DS_Store
