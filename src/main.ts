@@ -160,7 +160,7 @@ async function main() {
 
 main()
   .then(() => console.log('All done!'))
-  .catch(err => {
-    console.log(`Error in main(): ${err.stack || JSON.stringify(err)}`);
-    return process.exit(1);
+  .catch(error => {
+    console.log(`Error in main(): ${error.stack || JSON.stringify(error)}`);
+    throw error;
   });
