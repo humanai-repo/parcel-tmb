@@ -2,10 +2,12 @@
  * @fileoverview Script to run tumour burden calculation on Parcel.
  */
 
-import Parcel, {InputDocumentSpec, Job, JobId, JobSpec, JobPhase, DocumentId, IdentityId} from '@oasislabs/parcel';
-import {parse} from 'ts-command-line-args';
 import * as fs from 'fs';
 import * as process from 'process';
+
+import Parcel, {DocumentId, IdentityId, InputDocumentSpec, Job, JobId, JobPhase, JobSpec} from '@oasislabs/parcel';
+
+import {parse} from 'ts-command-line-args';
 
 // Oasis Parcel API values.
 const clientId = process.env.PARCEL_CLIENT_ID ?? '';
