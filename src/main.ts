@@ -111,12 +111,12 @@ async function tmb(inputAddresses: { [key: string]: string }, identity: Identity
     });
 
     const cmd = [
-        'calcTMB.sh',
+        'calcTMB',
     ];
 
     const jobSpec: JobSpec = {
         name: 'calc-tmb',
-        image: 'humansimon/ectmb',
+        image: 'humansimon/ectmb-plus@sha256:bbd5b7aa2466b6f7de22e414e63657773dbb291fb7f78dc74e7da9c97e2ffb01',
         inputDocuments: inputDocuments,
         outputDocuments: [{ mountPath: outputFileName, owner: identity }],
         cmd: cmd
