@@ -41,6 +41,7 @@ export const args = parse<IOArguments>(
 async function submitJobSpecs(jobSpecs: JobSpec[], parcel: Parcel): Promise<DocumentId[]> {
     // Submit the jobs.
     let jobIds: JobId[] = [];
+    var t0 = Math.floor(Date.now()/1000);
     for (let jobSpec of jobSpecs) {
         console.log(jobSpec.cmd.join(" "));
         console.log(jobSpec); //OTT Printf debugging -- replace with logging inputs and outputs
@@ -59,13 +60,15 @@ async function submitJobSpecs(jobSpecs: JobSpec[], parcel: Parcel): Promise<Docu
         await new Promise((resolve) => setTimeout(resolve, 5000)); // eslint-disable-line no-promise-executor-return
         jobs = [];
         console.log('Getting job statuses.');
+        var tN = Math.floor(Date.now()/1000);
+        var tRunning = tN - t0;
         for (let jobId of jobIds) {
             const job = await parcel.getJob(jobId);
             if (job.status === null || job.status === undefined) {
-                console.log(`Error reading ${jobId}.`);
+                console.log(`${tRunning}s -- Error reading ${jobId}.`);
                 jobRunningOrPending = true;
             } else {
-                console.log(`Job ${jobId} status is ${JSON.stringify(job.status.phase)}.`);
+                console.log(`${tRunning}s --Job ${jobId} status is ${JSON.stringify(job.status.phase)}.`);
                 jobs.push(job);
             }
         }
@@ -77,8 +80,8 @@ async function submitJobSpecs(jobSpecs: JobSpec[], parcel: Parcel): Promise<Docu
             jobRunningOrPending = jobRunningOrPending || job.status.phase === JobPhase.PENDING ||
                 job.status.phase === JobPhase.RUNNING;
             if (job.status.phase === JobPhase.FAILED) {
-                console.log(`Job ${jobId} failed with msg ${job.status.message}.`);
-                throw Error(`Job ${jobId} failed with msg ${job.status.message}.`);
+                console.log(`${tRunning}s -- Job ${jobId} failed with msg ${job.status.message}.`);
+                throw Error(`${tRunning}s -- Job ${jobId} failed with msg ${job.status.message}.`);
             }
         }
     } while (jobRunningOrPending);
