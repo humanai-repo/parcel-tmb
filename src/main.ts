@@ -2,39 +2,47 @@
  * @fileoverview Script to run tumour burden calculation on Parcel.
  */
 
-import Parcel, { InputDocumentSpec, OutputDocumentSpec, Job, JobId, JobSpec, JobPhase, DocumentId, IdentityId } from '@oasislabs/parcel';
-import { parse } from 'ts-command-line-args';
 import * as fs from 'fs';
 import * as process from 'process';
+
+import Parcel, {DocumentId, IdentityId, InputDocumentSpec, Job, JobId, JobPhase, JobSpec} from '@oasislabs/parcel';
+
+import {parse} from 'ts-command-line-args';
 
 // Oasis Parcel API values.
 const clientId = process.env.PARCEL_CLIENT_ID ?? '';
 const privateKey = JSON.parse(process.env.OASIS_API_PRIVATE_KEY ?? '{}');
 
 interface IOArguments {
-    inputAddresses?: string;
-    outputAddresses?: string;
-    help?: boolean;
+  inputAddresses?: string;
+  outputAddresses?: string;
+  help?: boolean;
 }
 
 export const args = parse<IOArguments>(
-    {
-        inputAddresses: {
-            type: String, alias: 'a', optional: true,
-            description: 'Path to a csv of input addresses, one address & filename per line.'
-        },
-        outputAddresses: {
-            type: String, alias: 'o', optional: true,
-            description: 'Optional path to write a list of output addresses, one address per line.'
-        },
-        help: {
-            type: Boolean, optional: true, alias: 'h',
-            description: 'Prints this usage guide.'
-        },
+  {
+    inputAddresses: {
+      type: String,
+      alias: 'a',
+      optional: true,
+      description: 'Path to a csv of input addresses, one address & filename per line.',
     },
-    {
-        helpArg: 'help',
+    outputAddresses: {
+      type: String,
+      alias: 'o',
+      optional: true,
+      description: 'Optional path to write a list of output addresses, one address per line.',
     },
+    help: {
+      type: Boolean,
+      optional: true,
+      alias: 'h',
+      description: 'Prints this usage guide.',
+    },
+  },
+  {
+    helpArg: 'help',
+  }
 );
 
 // Submits the jobs to Parcel and waits for the jobs to complete.
@@ -95,20 +103,28 @@ async function submitJobSpecs(jobSpecs: JobSpec[], parcel: Parcel): Promise<Docu
             }
         }
     }
-    return outputAddresses;
+  }
+  return outputAddresses;
 }
 
 // Runs the tmb job on Parcel.
-async function tmb(inputAddresses: { [key: string]: string }, identity: IdentityId,
-    parcel: Parcel): Promise<DocumentId[]> {
-    // const inputFileNames = ["UCEC.rda", "exome_hg38_vep.Rdata", "gene.covar.txt", "mutation_context_96.txt", "TST170_DNA_targets_hg38.bed", "GRCh38.d1.vd1.fa"];
-    // Remove files greater in size than 10MB for an experiment
-    const inputFileNames = ["gene.covar.txt", "mutation_context_96.txt", "TST170_DNA_targets_hg38.bed"];
-    const outputFileName = "tmb.pdf";
+async function tmb(
+  inputAddresses: {[key: string]: string},
+  identity: IdentityId,
+  parcel: Parcel
+): Promise<DocumentId[]> {
+  // const inputFileNames = ["UCEC.rda", "exome_hg38_vep.Rdata", "gene.covar.txt", "mutation_context_96.txt", "TST170_DNA_targets_hg38.bed", "GRCh38.d1.vd1.fa"];
+  // Remove files greater in size than 10MB for an experiment
+  const inputFileNames = ['gene.covar.txt', 'mutation_context_96.txt', 'TST170_DNA_targets_hg38.bed'];
+  const outputFileName = 'tmb.pdf';
 
-    const inputDocuments: InputDocumentSpec[] = inputFileNames.map((inputFileName: string) => {
-        return { mountPath: inputFileName, id: inputAddresses[inputFileName] as DocumentId };
-    });
+  const inputDocuments: InputDocumentSpec[] = inputFileNames.map((inputFileName: string) => {
+    return {
+      mountPath: inputFileName,
+      id: inputAddresses[inputFileName] as DocumentId,
+    };
+  });
+
 
     const cmd = [
         'calcTMB',
@@ -119,38 +135,39 @@ async function tmb(inputAddresses: { [key: string]: string }, identity: Identity
         image: 'humansimon/ectmb-plus@sha256:bbd5b7aa2466b6f7de22e414e63657773dbb291fb7f78dc74e7da9c97e2ffb01',
         inputDocuments: inputDocuments,
         outputDocuments: [{ mountPath: outputFileName, owner: identity }],
-        cmd: cmd
-    };
+        cmd: cmd,
+  };
 
-    return submitJobSpecs([jobSpec], parcel);
+  return submitJobSpecs([jobSpec], parcel);
 }
 
 async function main() {
-    console.log('Here we go...');
+  console.log('Here we go...');
 
-    const parcel = new Parcel({
-        clientId: clientId,
-        privateKey: privateKey
-    });
-    const identity = (await parcel.getCurrentIdentity()).id;
+  const parcel = new Parcel({
+    clientId: clientId,
+    privateKey: privateKey,
+  });
+  const identity = (await parcel.getCurrentIdentity()).id;
 
-    let inputAddresses: { [key: string]: string } = {};
-    fs.readFileSync(args.inputAddresses || '', 'ascii').
-        split("\n").filter((l: string) => l !== '').
-        map((l: string) => l.split(",")).
-        forEach((l: string[]) => inputAddresses[l[1]] = l[0]);
+  const inputAddresses: {[key: string]: string} = {};
+  fs.readFileSync(args.inputAddresses || '', 'ascii')
+    .split('\n')
+    .filter((l: string) => l !== '')
+    .map((l: string) => l.split(','))
+    .forEach((l: string[]) => (inputAddresses[l[1]] = l[0]));
 
-    const outputAddresses = await tmb(inputAddresses, identity, parcel);
+  const outputAddresses = await tmb(inputAddresses, identity, parcel);
 
-    // Write the out addresses to the output file if set.
-    if (args.outputAddresses) {
-        fs.writeFileSync(args.outputAddresses || '', outputAddresses.join("\n"));
-    }
+  // Write the out addresses to the output file if set.
+  if (args.outputAddresses) {
+    fs.writeFileSync(args.outputAddresses || '', outputAddresses.join('\n'));
+  }
 }
 
 main()
-    .then(() => console.log('All done!'))
-    .catch((err) => {
-        console.log(`Error in main(): ${err.stack || JSON.stringify(err)}`);
-        return process.exit(1);
-    });
+  .then(() => console.log('All done!'))
+  .catch(error => {
+    console.log(`Error in main(): ${error.stack || JSON.stringify(error)}`);
+    throw error;
+  });
