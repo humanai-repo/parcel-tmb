@@ -12,10 +12,14 @@ This package launches the ecTMB calculator on the Parcel Network.
 
 There are 4 steps to running ecTMB on Parcel.
 
-1. Download the test data locally
-1. Upload the test data to Parcel
+1. Download the test data locally<sup>\*</sup>
+1. Upload the test data to Parcel<sup>\*</sup>
 1. Launch a compute job on Parcel
 1. Download the result
+
+> **\*** Oasis are still working to support input files larger than 10GB. As
+> a work around a docker image with no dependencies is used and file upload
+> and inputs can be ignored.
 
 The Tumour Mutation Burden Calculation is wrapped in a docker
 container in [TMB-package](https://github.com/humanai-repo/TMB-package)
@@ -31,6 +35,8 @@ To create a working-data directory and download the data run:
 ```
 
 ### Upload the test data to Parcel
+
+> This section can be ignored if the no-dependencies Docker image is used.
 
 Follow the instructions
 [here](https://github.com/humanai-repo/parcel-demo/tree/main/upload-shakespeare-summary)
@@ -58,10 +64,12 @@ npm i @oasislabs/parcel
 npm run prestart
 ```
 
+Three job types are supported for bench marking: "helloworld", "test" and
+"train". The job types is specified with the "-t" command line argument.
 
 Launch
 ```bash
-npm run start  -- -a working-data/input-doc-ids.txt -o working-data/output.txt
+npm run start  -- -o working-data/output.txt -t helloworld
 ```
 
 ### Download the outputs
